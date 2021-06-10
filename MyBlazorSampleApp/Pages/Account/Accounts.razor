@@ -1,0 +1,83 @@
+﻿@page "/Accounts";
+
+@attribute [Authorize];
+@using Entity.Models.EntityModels.Auth;
+@using Entity.Repository;
+@using MyBlazorSampleApp.Shared;
+@using MyBlazorSampleApp.Components;
+
+@inject IRepository<AuthUser> Repository
+<div class="d-flex align-center justify-content-between mb-3">
+    <h4 class="font-400 mb-0" style="line-height: inherit">Пользователи</h4>
+    <a href="/EditAccount/0" class="btn btn-primary" role="button">Добавить пользователя</a>
+</div>
+<Confirm @ref="DeleteConfirmation" ConfirmationChanged="ConfirmDelete_Click"
+         ConfirmationMessage=@($"Delete?")>
+</Confirm>
+
+@if (Users == null)
+{
+    <p><em>Загрузка...</em></p>
+}
+else
+{
+    <PagedList ListQuery="Users" Context="user">
+        <HeaderDisplay>
+            <tr>
+                <th>№</th>
+                <th>Имя пользователя</th>
+                <th>ФИО</th>
+                <th>Инфо</th>
+                <th>Роль пользователя</th>
+                <th>События</th>
+            </tr>
+        </HeaderDisplay>
+        <ItemDisplay>
+            @*@foreach (var user in Users)
+                {*@
+            <tr>
+                <td>@user.Id</td>
+                <td>@user.Login</td>
+                <td>@user.FullName</td>
+                <td>@user.Description</td>
+                <td>@user.Role</td>
+                <td>
+                    <a href="" @onclick="() => click(user.Id)" class="alert alert-danger alert-xs small-15 mr-3 text-decoration-none">Удалить</a>
+
+                    <a href="/EditAccount/@user.Id" class="alert alert-warning alert-xs small-15 text-decoration-none">Изменит</a>
+                </td>
+            </tr>
+            @* } *@
+        </ItemDisplay>
+    </PagedList>
+}
+    @code {
+protected MyBlazorSampleApp.Components.ConfirmBase DeleteConfirmation { get; set; }
+
+
+    private List<AuthUser> Users = new List<AuthUser>();
+    protected override async Task OnInitializedAsync()
+    {
+        Users = await Repository.GetListAsync();
+    }
+
+    private void click(long id)
+    {
+        DeleteConfirmation.Show();
+    }
+    protected async Task ConfirmDelete_Click(bool deleteConfirmed)
+    {
+        if (deleteConfirmed)
+        {
+
+        }
+    }
+
+
+    public bool Show { get; set; } = true;
+
+    private void onDelete()
+    {
+        this.Show = true;
+    }
+    }

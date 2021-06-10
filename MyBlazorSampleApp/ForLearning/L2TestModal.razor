@@ -1,0 +1,22 @@
+﻿@page "/TestModal";
+@using MyBlazorSampleApp.ForLearning.Components;
+<h3>L2TestModal</h3>
+<button type="button" class="btn btn-secondary" data-dismiss="modal" @onclick="() => modal.Open()">Open oka My Modal form</button>
+
+<Modal @ref="modal">
+    <Title>This is caption of modal form</Title>
+    <Body>
+        this is body of modal form
+    </Body>
+    <Footer>
+        <button type="button" class="btn btn-primary" @onclick="SaveChanges">Save changes</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal" @onclick="() => modal.Close()">Close</button>
+    </Footer>
+</Modal>
+@code {
+    private Modal modal { get; set; }
+    private void SaveChanges()
+    {
+        modal.Close();
+    }
+}

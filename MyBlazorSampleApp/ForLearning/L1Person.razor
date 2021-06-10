@@ -1,0 +1,39 @@
+﻿@page "/L1Person";
+@using MyBlazorSampleApp.ForLearning.Components;
+@using MyBlazorSampleApp.ForLearning.Helpers;
+@attribute [Authorize];
+
+@inject Person PersonModel;
+@implements IDisposable;
+
+<h3>Learning test: Person</h3>
+<ChangePersonName></ChangePersonName>
+<ChangePersonAge>
+</ChangePersonAge>
+<ChangePersonGender></ChangePersonGender>
+<br />
+Person Name: @PersonData.Name
+<br />
+Person Age: @PersonData.Age;
+<br />
+Person Gender: @PersonData.Gender;
+<br />
+<p></p>
+<a href="/MySamples">Nazad</a>
+
+@code {
+    private Person PersonData = new Person();
+    protected override void OnInitialized()
+    {
+        PersonModel.PersonInfoChanged += PersonInfoChanged;
+    }
+    private void PersonInfoChanged(Person person)
+    {
+        PersonData = person;
+        StateHasChanged();
+    }
+    public void Dispose()
+    {
+        PersonModel.PersonInfoChanged -= PersonInfoChanged;
+    }
+}

@@ -1,0 +1,75 @@
+﻿@page "/TransactionsReport"
+
+@using Entity.Models.EntityModels.Adm;
+@using Entity.Models.EntityModels.Auth;
+@using Entity.Repository;
+@using MyBlazorSampleApp.Shared;
+@using MyBlazorSampleApp.Helpers.Extensions;
+
+@inject IRepository<AdmTransaction> Repository;
+@inject IRepository<AuthUser> userService;
+
+<h4 class="font-400 mb-4">Транзакции</h4>
+<p>Данная форма предназначена для выборки и поиска определенных транзакций. Транзакции отличается от платежей тем, что они соответствуют всем исходящим вопросам к поставщику услуг. Платежи - это проводки, которые порождаются клиентами системы. Одному платежу может соответствовать несколько транзакций(особенно в случае с терминалами самообслуживания), как и ни одной транзакции ( в случае если система подтвердила возможность приема платежа, но попытка проведения платежа так и не сформировалось клиентам</p>
+@if (Data == null)
+{
+    <p><em>Загрузка...</em></p>
+}
+else
+{
+    <div class="app-table">
+        <div class="table-responsive">
+            <PagedList ListQuery="Data">
+                <HeaderDisplay>
+                    <tr>
+                        <th style="width: 55px">№</th>
+                        <th style="width: 150px">Группа</th>
+                        <th style="width: 175px">Точка оплаты</th>
+                        <th style="width: 200px">Дата</th>
+                        <th style="width: 200px">Статус</th>
+                        <th style="width: 150px">Поставщик</th>
+                        <th style="width: 150px">Оператор</th>
+                        <th style="width: 150px">Клиент</th>
+                        <th style="width: 150px">Тип оплаты</th>
+                        <th style="width: 150px">Сумма</th>
+                        <th style="width: 225px">Сумма к зачислению</th>
+                        <th style="width: 150px">Комиссия</th>
+                        <th style="width: 215px">Комиссия системы</th>
+                        @* <th></th> *@
+                    </tr>
+                </HeaderDisplay>
+                <ItemDisplay Context="transaction">
+                    <tr>
+                        <td>@transaction.Id </td>
+                        <td></td>
+                        <td></td>
+                        <td>@transaction.CreateDate</td>
+                        <td>@transaction.State.GetDescription()</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td>Наличные</td>
+                        <td>@transaction.Amount</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        @* <td><button @onclick="() => click(transaction.Id)">X</button></td> *@
+                    </tr>
+                </ItemDisplay>
+            </PagedList>
+        </div>
+    </div>
+}
+    @code {
+private List<AdmTransaction> Data = new List<AdmTransaction>();
+    protected override async Task OnInitializedAsync()
+    {
+        Data = await Repository.GetListAsync();
+    }
+
+    private void click(long id)
+    {
+        var item = Data.FirstOrDefault(x => x.Id == id);
+        item.CreateDate = DateTime.Now;
+    }
+    }

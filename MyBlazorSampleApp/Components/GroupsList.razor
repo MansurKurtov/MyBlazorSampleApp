@@ -1,0 +1,89 @@
+﻿@using Entity.Models.EntityModels.Adm;
+@using Entity.Repository;
+
+@inject IRepository<AdmGroup> groupRepository;
+<Confirm @ref="DeleteConfirmation" ConfirmationChanged="ConfirmDelete_Click"
+         ConfirmationMessage=@($"Вы хотите удалить: {selectedGroup?.Name}?")>
+</Confirm>
+@if (Groups != null)
+{
+    <table class="w-100 ">
+        <thead>
+            <tr>
+                <th>
+                    <span style="color:#A5A9AC;font-size:small;">№</span>
+                </th>
+                <th>
+                    <span style="color:#A5A9AC;font-size:small;">Название</span>
+                </th>
+                <th>
+                    <span style="color:#A5A9AC;font-size:small;">...</span>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var group in Groups)
+            {
+                <tr>
+                    <td>
+                        @group.Id
+                    </td>
+                    <td>
+                        <a href="javascript: void(0);" @onclick="() => click(group.Id)">@group.Name</a>
+                    </td>
+                    <td>
+                        <a href="javascript: void(0);" @onclick="() => DeleteGroup(group.Id)" class="text-decoration-none" style=" color: #842029;">
+                            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" focusable="false" width="0.625em" height="0.625em" preserveAspectRatio="xMidYMid meet" viewBox="0 0 128 128" class="iconify arty-animated" data-icon="arty-animated:16-close" style="vertical-align: -0.125em; transform: rotate(360deg);"><g stroke="currentColor" stroke-width="16" stroke-linecap="round" fill="none" fill-rule="evenodd"><path d="M8 8l112 112" class="animation-delay-0 animation-duration-6 animate-stroke stroke-length-230"></path><path d="M8 120L120 8" class="animation-delay-6 animation-duration-6 animate-stroke stroke-length-230"></path></g></svg>
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+
+    </table>
+}
+@code {
+    [Parameter]
+    public long OwnerId { get; set; }
+    [Parameter]
+    public List<AdmGroup> Groups { get; set; }
+
+    [Parameter]
+    public EventCallback<AdmGroup> OnGroupSelect { get; set; }
+
+    protected MyBlazorSampleApp.Components.ConfirmBase DeleteConfirmation { get; set; }
+
+    private AdmGroup selectedGroup;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadGroupsByOwner(OwnerId);
+    }
+    private async Task click(long id)
+    {
+        selectedGroup = await groupRepository.GetByIdAsync(id);
+        await OnGroupSelect.InvokeAsync(selectedGroup);
+
+    }
+    private async Task DeleteGroup(long id)
+    {
+
+        selectedGroup = await groupRepository.GetByIdAsync(id);
+        DeleteConfirmation.Show();
+    }
+
+    protected async Task ConfirmDelete_Click(bool deleteConfirmed)
+    {
+        if (deleteConfirmed)
+        {
+            await groupRepository.DeleteAsync(selectedGroup);
+            await LoadGroupsByOwner(OwnerId);
+        }
+    }
+
+    private async Task LoadGroupsByOwner(long? ownerId)
+    {
+        if (ownerId != 0)
+            Groups = groupRepository.GetQueryable().Where(w => w.OwnerId == ownerId).OrderBy(o => o.Id).ToList();
+    }
+}

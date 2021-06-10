@@ -1,0 +1,91 @@
+﻿@page "/EditAccount/{Id:int}";
+
+@attribute [Authorize];
+@using Entity.Models.PostModels.Auth;
+@using Entity.Models.EntityModels.Auth;
+@using MyBlazorSampleApp.Services.Abstraction;
+@using MyBlazorSampleApp.Services.Auth;
+
+@inject NavigationManager NavigationManager;
+@inject IAlertService AlertService;
+@inject IAdmAuthService  AdmAuthService;
+
+<h4 class="font-400 mb-4">Добавление пользователя</h4>
+
+<EditForm Model="@accountModel" OnValidSubmit="@InsertAccount">
+    <div class="row">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="col-lg-3">
+            <div class="form-group">
+                <label class="form-group-label">Логин</label>
+                <InputText id="Login" @bind-Value="accountModel.Login" class="form-control" />
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="form-group">
+                <label class="form-group-label">Имя:</label>
+                <InputText id="FullName" @bind-Value="accountModel.FullName" class="form-control" />
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="form-group">
+                <label class="form-group-label">Пароль:</label>
+                <InputText id="Password" type="password" @bind-Value="accountModel.Password" class="form-control" />
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="form-group">
+                <label class="form-group-label">Подтвердить пароль:</label>
+                <InputText id="ConfirmPassword" type="password" @bind-Value="accountModel.ConfirmPassword" class="form-control" />
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="form-group">
+                <label class="form-group-label">Дополнительная информация:</label>
+                <InputText id="Description" @bind-Value="accountModel.Description" class="form-control" />
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-success mt-3">Сохранить</button>
+</EditForm>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private AuthUserPostModel accountModel = new AuthUserPostModel();
+    private AuthUser authUser;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id == 0)
+            return;
+
+        accountModel = await AdmAuthService.GetAccountById(Id);
+
+    }
+
+    private async Task InsertAccount()
+    {
+        AlertService.Clear();
+        if (accountModel.Password != accountModel.ConfirmPassword)
+        {
+            AlertService.Warn("пароль не соответствует!");
+            return;
+        }
+        var isSuccess = Id > 0 ? await AdmAuthService.Update(accountModel) : await AdmAuthService.Add(accountModel);
+        if (await AdmAuthService.Update(accountModel))
+            AlertService.Success("Изменения успешно сохранены");
+        else
+            AlertService.Error("Ошибка с сервером");
+
+        NavigationManager.NavigateTo("/Accounts");
+    }
+}

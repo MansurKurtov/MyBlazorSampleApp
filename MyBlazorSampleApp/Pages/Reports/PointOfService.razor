@@ -1,0 +1,108 @@
+﻿@page "/PointOfServices";
+
+@using Entity.Models.EntityModels.Adm;
+@using Entity.Repository;
+@using MyBlazorSampleApp.Components;
+
+@inject IRepository<AdmOwner> ownerRepository;
+@inject IRepository<AdmGroup> groupRepository;
+@inject IRepository<Adm> admRepository;
+
+<h3>Точки оплаты</h3>
+<br />
+<div class="row">
+    <div class="col-3" style="background-color:lavender;">
+        <div>
+            <h5>
+                Владельцы
+            </h5>
+            <OwnerEditForm OwnerModel="@currentOwner" OwnerName="@currentOwner?.Name" OnOwnerChanged="@OnOwnerEdit"></OwnerEditForm>
+            <OwnersList Owners="@Owners" OnOwnerSelect="@OwnerSelected"></OwnersList>
+        </div>
+    </div>
+    <div class="col-3" style="background-color:lightgray;">
+        <div>
+            <h5>
+                Группы
+            </h5>
+            <GroupEditForm GroupModel="@currentGroup" GroupName="@currentGroup?.Name" Owner="@currentOwner" OnGroupChanged="@OnGroupEdit"></GroupEditForm>
+            <GroupsList OwnerId="@currentOwner.Id" OnGroupSelect="@GroupSelected" Groups="@Groups"></GroupsList>
+        </div>
+    </div>
+    <div class="col-6" style="background-color: #F7F7F7;">
+        <div>
+            <h5>
+                Адмы
+            </h5>
+            <AdmEditForm AdmModel="@currentAdm" AdmName="@currentAdm?.Name" Group="@currentGroup" Owner="@currentOwner" OnAdmChanged="@OnAdmEdit"></AdmEditForm>
+            <AdmsList GroupId="@currentGroup.Id" OnAdmSelect="@AdmSelected" Adms="@Adms"></AdmsList>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+    private AdmOwner currentOwner = new AdmOwner();
+    private AdmGroup currentGroup = new AdmGroup();
+    private Adm currentAdm = new Adm();
+
+
+    private List<AdmOwner> Owners;
+    private List<AdmGroup> Groups;
+    private List<Adm> Adms;
+
+    private async Task OwnerSelected(AdmOwner owner)
+    {
+        currentOwner = owner;
+        GetGroups();
+        await LoadOwners();
+        currentGroup = new AdmGroup();
+        GetAdms();
+    }
+    private void GetGroups()
+    {
+        if (currentOwner != null)
+            Groups = groupRepository.GetQueryable().Where(w => w.OwnerId == currentOwner.Id).ToList();
+    }
+    private void GetAdms()
+    {
+        if (currentGroup != null)
+            Adms = admRepository.GetQueryable().Where(w => w.AdmGroupId == currentGroup.Id).ToList();
+    }
+    private async Task OnOwnerEdit(AdmOwner owner)
+    {
+        await LoadOwners();
+        currentOwner = new AdmOwner();
+    }
+    private void OnGroupEdit(AdmGroup group)
+    {
+        GetGroups();
+        currentGroup = new AdmGroup();
+    }
+    private void OnAdmEdit(Adm adm)
+    {
+        GetAdms();
+        currentAdm = new Adm();
+    }
+    private void GroupSelected(AdmGroup group)
+    {
+        currentGroup = group;
+        GetAdms();
+        currentAdm = new Adm();
+        //GetGroups();
+    }
+    private void AdmSelected(Adm adm)
+    {
+        currentAdm = adm;
+        GetAdms();
+    }
+    private async Task LoadOwners()
+    {
+        Owners = await ownerRepository.GetListAsync();
+        Owners = Owners.OrderBy(o => o.Id).ToList();
+    }
+}

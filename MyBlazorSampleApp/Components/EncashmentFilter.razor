@@ -1,0 +1,110 @@
+﻿@using MyBlazorSampleApp.Components.Models;
+@using Entity.Models.EntityModels.Adm;
+@using Entity.Repository;
+@inject IRepository<AdmOwner> admOwnerRepository;
+@inject IRepository<AdmGroup> admGroupRepository;
+@inject IRepository<Adm> admRepository;
+
+<EditForm Model="@ESearchModel" OnValidSubmit="@Search">
+
+    <div class="row">
+        <div class="col-6">
+
+            <div class="tranzaction_search_block">
+
+                <div>
+                    <label>Владелец</label>
+                    <select class="form-control" @onchange="ownerSelected">
+                        @if (owners != null)
+                        {
+                            @foreach (var item in owners)
+                            {
+                                <option value="@item.Id">@item.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label>Группа</label>
+                    <select class="form-control" @onchange="groupSelected">
+                        @if (groups != null)
+                        {
+                            @foreach (var item in groups)
+                            {
+                                <option value="@item.Id">@item.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label>АДМ</label>
+                    <select @bind="ESearchModel.AdmId" class="form-control">
+                        @if (adms != null)
+                        {
+                            @foreach (var item in adms)
+                            {
+                                <option value="@item.Id">@item.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mb-4">
+        <button class="btn btn-primary" @onclick="()=>Search()">Показать результат</button>
+    </div>
+
+</EditForm>
+
+@code {
+    private EncashmentSearch ESearchModel = new EncashmentSearch();
+    private List<AdmOwner> owners = new List<AdmOwner>();
+    private List<AdmGroup> groups = new List<AdmGroup>();
+    private List<Adm> adms = new List<Adm>();
+
+
+    [Parameter]
+    public EventCallback<EncashmentSearch> OnSearchByFilter { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        owners = await admOwnerRepository.GetListAsync();
+        adms.Clear(); groups.Clear();
+        var foId = owners.FirstOrDefault()?.Id;
+        ownerSelected(new ChangeEventArgs() { Value = foId });
+    }
+    private void Search()
+    {
+        OnSearchByFilter.InvokeAsync(ESearchModel);
+    }
+    private void ownerSelected(ChangeEventArgs e)
+    {
+        int oId;
+        if (int.TryParse(e.Value.ToString(), out oId))
+        {
+            ESearchModel.OwnerId = oId;
+            adms.Clear();
+            groups = admGroupRepository.GetQueryable().Where(w => w.OwnerId == oId).ToList();
+            var fgId = groups.FirstOrDefault()?.Id;
+            groupSelected(new ChangeEventArgs() { Value = fgId });
+        }
+    }
+
+    private void groupSelected(ChangeEventArgs e)
+    {
+        int gId;
+        if (int.TryParse(e.Value.ToString(), out gId))
+        {
+            ESearchModel.GroupId = gId;
+            var allAdms = admRepository.GetQueryable().Where(w => w.AdmGroupId == gId).ToList();
+            adms.Clear();
+            adms.Add(new Adm() { Id = 0, Name = "Все" });
+            adms.AddRange(allAdms);
+            ESearchModel.AdmId = 0;
+
+        }
+    }
+}

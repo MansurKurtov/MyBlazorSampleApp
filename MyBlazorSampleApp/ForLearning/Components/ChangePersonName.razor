@@ -1,0 +1,13 @@
+﻿@using MyBlazorSampleApp.ForLearning.Helpers;
+@inject Person Person;
+        <button @onclick="SetName">Set name</button>
+    @code {
+        private string PersonName = "Person";
+        private int ID = 20;
+        void SetName()
+        {
+            ID++;
+            PersonName = $"Person{ID}";
+            Person.SetName(PersonName);
+        }
+    }

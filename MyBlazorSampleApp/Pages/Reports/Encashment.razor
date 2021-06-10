@@ -1,0 +1,108 @@
+﻿@page "/Encashment";
+@using MyBlazorSampleApp.Components;
+@using MyBlazorSampleApp.Components.Models;
+@using MyBlazorSampleApp.Pages.Reports.Models;
+@using Entitys.DB;
+@using MyBlazorSampleApp.Helpers.PDF;
+@using MyBlazorSampleApp.Helpers.Extensions;
+
+@inject DataContext context;
+@inject Microsoft.JSInterop.IJSRuntime JS;
+
+<h3>Инкассация по Адм</h3>
+<EncashmentFilter OnSearchByFilter="@ShowResultsByFilter"></EncashmentFilter>
+@if (EncashmentData == null)
+{
+    <p><em>Загрузка...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th style="width: 55px">№</th>
+                <th style="width: 150px">Группа</th>
+                <th style="width: 175px">Точка оплаты</th>
+                <th style="width: 200px">Терминал №</th>
+                <th style="width: 200px">Дата инкассации </th>
+                <th style="width: 150px">Сумма</th>
+                <th style="width: 150px">...</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in EncashmentData)
+            {
+                <tr>
+                    <td>@item.RowNumber </td>
+                    <td>@item.GroupName</td>
+                    <td>@item.AdmName</td>
+                    <td>@item.TerminalNumber</td>
+                    <td>@item.EncashmentDate</td>
+                    <td>@item.Amount</td>
+                    <td><button class="btn btn-primary" @onclick="() => ExportToPdf(item)">Печать</button></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+    @code {
+
+private List<AdmEncashmentModel> EncashmentData = new List<AdmEncashmentModel>();
+
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+
+    private void ShowResultsByFilter(EncashmentSearch searchData)
+    {
+        EncashmentData.Clear();
+
+        if (searchData.AdmId != 0)
+        {
+            FillDataByAdm(searchData);
+            return;
+        }
+
+        var adms = context.Adms.Where(w => w.AdmGroupId == searchData.GroupId).ToList();
+        adms.ForEach(f =>
+        {
+            var searchParam = new EncashmentSearch();
+            searchParam.GroupId = searchData.GroupId;
+            searchParam.OwnerId = searchData.OwnerId;
+            searchParam.AdmId = f.Id;
+            FillDataByAdm(searchParam);
+        });
+    }
+
+
+    private void FillDataByAdm(EncashmentSearch searchData)
+    {
+        var data = context.AdmEncashmentInfos.Where(w => w.AdmId == searchData.AdmId).OrderByDescending(o => o.EncashmentDate).FirstOrDefault();
+        if (data == null)
+            return;
+
+        var result = new AdmEncashmentModel();
+        result.RowNumber = 1;
+        result.OwnerName = context.AdmOwners.Where(w => w.Id == searchData.GroupId).FirstOrDefault()?.Name ?? string.Empty;
+        result.GroupName = context.AdmGroups.Where(w => w.Id == searchData.GroupId).FirstOrDefault()?.Name ?? string.Empty;
+        var adm = context.Adms.Where(w => w.Id == searchData.AdmId).FirstOrDefault();
+        result.AdmName = adm?.Name ?? string.Empty;
+        result.Mfo = adm?.Mfo ?? string.Empty;
+        result.TerminalNumber = adm?.TerminalNumber ?? 0;
+        result.EncashmentId = data?.EncashmentId ?? 0;
+        result.EncashmentDate = data?.EncashmentDate ?? default;
+        result.Amount = data?.Amount ?? 0;
+        EncashmentData.Add(result);
+    }
+
+    protected async Task ExportToPdf(AdmEncashmentModel model)
+    {
+        var data = PdfHelper.GenerateHtml(model);
+        //PdfHelper.Print(data);
+        //var dataStream = PdfHelper.GetPDF(data);
+        var dataStream = PdfHelper.toExcel(model);
+        await JS.SaveAs("encashment.xlsx", dataStream);
+    }
+    }
+

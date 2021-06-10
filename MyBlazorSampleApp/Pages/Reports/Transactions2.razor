@@ -1,0 +1,180 @@
+﻿@page "/Transactions2"
+
+@using MyBlazorSampleApp.Helpers.Extensions;
+@using MyBlazorSampleApp.Components;
+@using MyBlazorSampleApp.Components.Models;
+@using Entitys.DB;
+@using Models;
+
+@inject DataContext context;
+<h4 class="font-400 mb-4">Транзакции</h4>
+<p>Данная форма предназначена для выборки и поиска определенных транзакций. Транзакции отличается от платежей тем, что они соответствуют всем исходящим вопросам к поставщику услуг. Платежи - это проводки, которые порождаются клиентами системы. Одному платежу может соответствовать несколько транзакций(особенно в случае с терминалами самообслуживания), как и ни одной транзакции ( в случае если система подтвердила возможность приема платежа, но попытка проведения платежа так и не сформировалось клиентам</p>
+<br />
+<TransactionsSearchParam OnSearchByFilter="@SearchByParam"></TransactionsSearchParam>
+
+<Pager PageIndex=@pageIndex TotalPages=@pagesCount OnClick="PageIndexChanged"
+       HasNextPage=@HasNextPage HasPreviousPage=@HasPreviousPage>
+</Pager>
+@if (Data == null)
+{
+    <p><em>Загрузка...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th style="width: 55px">№</th>
+                <th style="width: 150px">Группа</th>
+                <th style="width: 175px">Точка оплаты</th>
+                <th style="width: 200px">Дата</th>
+                <th style="width: 200px">Статус</th>
+                <th style="width: 150px">Поставщик</th>
+                <th style="width: 150px">Оператор</th>
+                <th style="width: 150px">Клиент</th>
+                <th style="width: 150px">Тип оплаты</th>
+                <th style="width: 150px">Сумма</th>
+                <th style="width: 225px">Сумма к зачислению</th>
+                <th style="width: 150px">Комиссия</th>
+                <th style="width: 215px">Комиссия системы</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var transaction in Data)
+            {
+                <tr>
+                    <td>@transaction.RowNumber </td>
+                    <td>@transaction.GroupName</td>
+                    <td>@transaction.AdmName</td>
+                    <td>@transaction.CreateDate</td>
+                    <td>@transaction.State.GetDescription()</td>
+                    <td>@transaction.ProviderName</td>
+                    <td>@transaction.OperatorName</td>
+                    <td>@transaction.ClientAccountCode</td>
+                    <td>@transaction.PayType</td>
+                    <td>@transaction.Amount</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+    @code {
+private int number = 1;
+    private int skip = 0;
+    private int take = 10;
+    private int pageIndex = 1;
+    private int pagesCount = 0;
+    private List<AdmTransactionModel> Data = new List<AdmTransactionModel>();
+    private TransactionsSearch _searchParam;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+
+    private async void PageIndexChanged(int newPageNumber)
+    {
+        if (newPageNumber < 0 || newPageNumber > pagesCount || _searchParam == null)
+            return;
+
+        pageIndex = newPageNumber;
+        SearchByParam(_searchParam);
+
+        StateHasChanged();
+    }
+
+    private bool HasPreviousPage
+    {
+        get
+        {
+            return (pageIndex > 1);
+        }
+        set { }
+    }
+
+    private bool HasNextPage
+    {
+        get
+        {
+            return (pageIndex < pagesCount);
+        }
+        set { }
+    }
+
+    private void SearchByParam(TransactionsSearch searchParam)
+    {
+        _searchParam = searchParam;
+
+        var query = context.AdmTransactions.AsQueryable();
+
+        if (!string.IsNullOrEmpty(searchParam.PayDetail))
+            query = query.Where(w => w.ClientAccountCode.Contains(searchParam.PayDetail) || w.ClientInn.Contains(searchParam.PayDetail));
+
+        if (!string.IsNullOrEmpty(searchParam.PayNumber))
+        {
+            int payNumber;
+            if (int.TryParse(searchParam.PayNumber, out payNumber))
+                query = query.Where(w => w.Id == payNumber);
+        }
+
+        if (searchParam.OperatorId > 0)
+            query = query.Where(w => w.BillingOperationId == searchParam.OperatorId);
+
+        if (searchParam.AdmId > 0)
+            query = query.Where(w => w.AdmId == searchParam.AdmId);
+
+        if (searchParam.PayStatusId > 0)
+            query = query.Where(w => (int)w.State == searchParam.PayStatusId);
+
+        query = query.Where(w => w.CreateDate >= searchParam.BeginDate && w.CreateDate <= searchParam.EndDate);
+        var result = query.ToList();
+        pagesCount = result.Count / take + 1;
+
+        var pagedData = result.Skip(skip + take * (pageIndex - 1)).Take(take).ToList();
+        var i = (pageIndex - 1) * take + 1;
+        Data = (from transact in pagedData
+                join adm in context.Adms on transact.AdmId equals adm.Id
+                join grp in context.AdmGroups on adm.AdmGroupId equals grp.Id
+                let rowNumber = i++
+                select new AdmTransactionModel()
+                {
+                    RowNumber = rowNumber,
+                    Id = transact.Id,
+                    GroupId = grp.Id,
+                    GroupName = grp.Name,
+                    AdmId = adm.Id,
+                    AdmName = adm.Name,
+                    CreateDate = transact.CreateDate,
+                    PerformDate = transact.PerformDate,
+                    Amount = transact.Amount,
+                    UpdateDate = transact.UpdateDate,
+                    ClientInn = transact.ClientInn,
+                    BillingOperationId = transact.BillingOperationId,
+                    ProviderName = "Все",
+                    OperatorName = "Encashment",
+                    PayType = "Наличные",
+                    ClientAccountCode = transact.ClientAccountCode,
+                    PerformRequestData = transact.PerformRequestData,
+                    PerformResponseData = transact.PerformResponseData,
+                    State = transact.State
+                }).ToList();
+    }
+
+    private string GetGroupNameByAdm(int admId)
+    {
+
+        var adm = context.Adms.Where(w => w.Id == admId).FirstOrDefault();
+
+        if (adm == null)
+            return default;
+
+        var group = context.AdmGroups.Where(w => w.Id == adm.AdmGroupId).FirstOrDefault();
+        if (group == null)
+            return string.Empty;
+
+        return group.Name;
+    }
+    }

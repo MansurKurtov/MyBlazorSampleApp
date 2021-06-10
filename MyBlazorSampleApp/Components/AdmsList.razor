@@ -1,0 +1,141 @@
+﻿@using Entity.Models.EntityModels.Adm;
+@using Entity.Repository;
+
+@inject IRepository<Adm> admRepository;
+<Confirm @ref="DeleteConfirmation" ConfirmationChanged="ConfirmDelete_Click"
+         ConfirmationMessage=@($"Вы хотите удалить: {selectedAdm?.Name}?")>
+</Confirm>
+@if (Adms != null)
+{
+    <table class="w-100 ">
+        <thead>
+            <tr>
+                <th>
+                    <span style="color:#A5A9AC;font-size:small;">№</span>
+                </th>
+                <th>
+                    <span style="color:#A5A9AC;font-size:small;">Название</span>
+                </th>
+                <th>
+                    <span style="color:#A5A9AC;font-size:small;">...</span>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var adm in Adms)
+            {
+                <tr>
+                    <td>
+                        @adm.Id
+                    </td>
+                    <td>
+                        <a href="javascript: void(0);" @onclick="() => click(adm.Id)" @ondblclick="()=>AdmDoubleClick(adm)">@adm.Name</a>
+                    </td>
+                    <td>
+                        <a href="javascript: void(0);" @onclick="() => DeleteAdm(adm.Id)" class="text-decoration-none" style=" color: #842029;">
+                            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" focusable="false" width="0.625em" height="0.625em" preserveAspectRatio="xMidYMid meet" viewBox="0 0 128 128" class="iconify arty-animated" data-icon="arty-animated:16-close" style="vertical-align: -0.125em; transform: rotate(360deg);"><g stroke="currentColor" stroke-width="16" stroke-linecap="round" fill="none" fill-rule="evenodd"><path d="M8 8l112 112" class="animation-delay-0 animation-duration-6 animate-stroke stroke-length-230"></path><path d="M8 120L120 8" class="animation-delay-6 animation-duration-6 animate-stroke stroke-length-230"></path></g></svg>
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+
+    </table>
+}
+
+<Modal @ref="modal">
+    <Title>Информация о ADM</Title>
+
+    <Body>
+        <EditForm Model="@selectedAdm" OnValidSubmit="@EditAdm">
+            <div class="col-lg-3">
+                <div class="form-group">
+                    <label class="form-group-label">Название</label>
+                    <InputText id="Login" @bind-Value="selectedAdm.Name" class="form-control" />
+                </div>
+            </div>
+            <div class="col-lg-3">
+                <div class="form-group">
+                    <label class="form-group-label">Телефон службы поддержки</label>
+                    <InputText id="Login" @bind-Value="selectedAdm.SupportPhone" class="form-control" />
+                </div>
+            </div>
+            <div class="col-lg-3">
+                <div class="form-group">
+                    <label class="form-group-label">МФО</label>
+                    <InputText id="Login" @bind-Value="selectedAdm.Mfo" class="form-control" />
+                </div>
+            </div>
+            <button type="submit" class="btn btn-success mt-3" @onclick="()=>ModalChanges()">Сохранить</button>
+        </EditForm>
+    </Body>
+    @*<Footer>
+        <button type="button" class="btn btn-primary" @onclick="ModalSaveChanges">Save changes</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal" @onclick="() => modal.Close()">Close</button>
+    </Footer>*@
+</Modal>
+
+@code {
+    [Parameter]
+    public long GroupId { get; set; }
+    [Parameter]
+    public List<Adm> Adms { get; set; }
+
+    [Parameter]
+    public EventCallback<Adm> OnAdmSelect { get; set; }
+
+    private Modal modal { get; set; }
+
+    protected MyBlazorSampleApp.Components.ConfirmBase DeleteConfirmation { get; set; }
+
+    private Adm selectedAdm = new Adm();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAdmByGroup(GroupId);
+    }
+    private async Task click(int id)
+    {
+        selectedAdm = await admRepository.GetByIdAsync(id);
+        await OnAdmSelect.InvokeAsync(selectedAdm);
+
+    }
+    private async Task DeleteAdm(int id)
+    {
+
+        selectedAdm = await admRepository.GetByIdAsync(id);
+        DeleteConfirmation.Show();
+    }
+
+    protected async Task ConfirmDelete_Click(bool deleteConfirmed)
+    {
+        if (deleteConfirmed)
+        {
+            await admRepository.DeleteAsync(selectedAdm);
+            await LoadAdmByGroup(GroupId);
+        }
+    }
+
+    private async Task LoadAdmByGroup(long? groupId)
+    {
+        if (groupId != 0)
+            Adms = admRepository.GetQueryable().Where(w => w.AdmOwnerId == groupId).OrderBy(o => o.Id).ToList();
+    }
+    private async Task AdmDoubleClick(Adm adm)
+    {
+        selectedAdm = adm;
+        modal.Open();
+    }
+    private void ModalSaveChanges()
+    {
+        modal.Close();
+    }
+    private void EditAdm()
+    {
+
+    }
+    private void ModalChanges()
+    {
+        modal.Close();
+    }
+}

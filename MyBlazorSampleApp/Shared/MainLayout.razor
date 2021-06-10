@@ -1,0 +1,50 @@
+﻿@using MyBlazorSampleApp.Pages.Account;
+@using MyBlazorSampleApp.Services.Abstraction;
+
+@inherits LayoutComponentBase
+
+
+@inject IAccountService AccountService;
+@inject NavigationManager NavigationManager;
+@if (LoggedIn)
+{
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <div class="main">
+        <div class="top-row px-4">
+            <span class="mr-2 size-15 font-500">Имя пользователя:</span> <span style="color:orange;font-weight:bold;"> @AccountService.User.FullName</span>
+            <a href="#" @onclick="LogOut" class="alert alert-danger alert-xs text-decoration-none size-15 font-500 mb-0 ml-3" role="alert">Выход</a>
+
+        </div>
+
+        <div class="app-container pt-4">
+            <Alert />
+            @Body
+        </div>
+    </div>
+}
+ 
+@code {
+
+    protected async override Task OnInitializedAsync()
+    {
+        base.OnInitialized();
+        if (AccountService.User==null)
+        {
+            NavigationManager.NavigateTo($"/login");
+        }
+    }
+
+    private void LogOut()
+    {
+        AccountService.User = null;
+        NavigationManager.NavigateTo("/login");
+    }
+
+    public bool LoggedIn
+    {
+        get { return AccountService.User != null; }
+    }
+}

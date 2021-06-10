@@ -1,0 +1,26 @@
+﻿[
+  {
+    "Key": "Login",
+    "LocalizedValue": {
+      "ru-RU": "Имя пользователя",
+      "en-US": "User name",
+      "uz-UZ": "Foydalanuvchi nomi"
+    }
+  },
+  {
+    "Key": "Password",
+    "LocalizedValue": {
+      "ru-RU": "Пароль",
+      "en-US": "Password",
+      "uz-UZ": "Parol"
+    }
+  },
+  {
+    "Key": "Enter",
+    "LocalizedValue": {
+      "ru-RU": "Войти",
+      "en-US": "Login",
+      "uz-UZ": "Kirish"
+    }
+  }
+]

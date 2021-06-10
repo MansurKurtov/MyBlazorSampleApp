@@ -1,0 +1,28 @@
+﻿
+@typeparam TItem
+
+<table>
+    <thead>
+        @TableHeader
+    </thead>
+
+    <tbody>
+        @foreach (var item in List)
+        {
+            @TableBody(item)
+        }
+
+    </tbody>
+</table>
+
+@code {
+
+    [Parameter]
+    public List<TItem> List  { get; set; }
+    [Parameter]
+    public RenderFragment TableHeader { get; set; }
+    [Parameter]
+    public RenderFragment<TItem> TableBody { get; set; }
+    
+}
+ 

@@ -1,0 +1,11 @@
+﻿@using MyBlazorSampleApp.ForLearning.Helpers;
+@inject Person PersonModel;
+    <button @onclick="SetGender">Set Gender</button>
+    @code {
+        private int gender = 1;
+        void SetGender()
+        {
+            gender = gender == 1 ? 2 : 1;
+            PersonModel.SetGender(gender);
+        }
+    }

@@ -1,0 +1,47 @@
+﻿@using Entity.Models.EntityModels.Adm;
+@using Entity.Repository;
+
+@inject IRepository<AdmGroup> groupRepository;
+
+
+<EditForm Model="@GroupModel" OnValidSubmit="@EditGroupData">
+    <div class="row">
+        <div class="col-7">
+
+            <InputText id="OwnerName" @bind-Value="@GroupName" class="form-control" type="text" placeholder="Название" />
+
+        </div>
+        <div class="col-5">
+            <button class="btn btn-primary text-center w-100" type="submit">
+                Добавить
+            </button>
+        </div>
+    </div>
+</EditForm>
+@code{
+    [Parameter]
+    public string GroupName { get; set; }
+    [Parameter]
+    public AdmGroup GroupModel { get; set; }
+    [Parameter]
+    public EventCallback<AdmGroup> OnGroupChanged { get; set; }
+    [Parameter]
+    public AdmOwner Owner { get; set; }
+
+
+    protected override void OnParametersSet()
+    {
+        if (GroupModel == null)
+            GroupModel = new AdmGroup();
+    }
+    private async Task EditGroupData()
+    {
+        if (Owner == null)
+            return;
+
+        GroupModel.Name = GroupName;
+        GroupModel.OwnerId = Owner.Id;
+        var addResult = GroupModel.Id == 0 ? await groupRepository.InsertAsync(GroupModel) : await groupRepository.UpdateAsync(GroupModel);
+        await OnGroupChanged.InvokeAsync(GroupModel);
+    }
+}

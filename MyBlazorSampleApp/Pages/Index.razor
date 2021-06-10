@@ -1,0 +1,19 @@
+﻿@page "/"
+
+@using Entity.Repository;
+@using Entity.Models.EntityModels.Auth;
+@using MyBlazorSampleApp.Services.Abstraction;
+@inject IAccountService AccountService
+@inject IRepository<AuthPermission> PermissionService
+<h4 class="font-400">ADM Administration page!</h4>
+
+<SurveyPrompt Title="ADM Administration page" />
+@code{
+    private List<AuthPermission> list = new List<AuthPermission>();
+    private string UserInfo;
+    protected override async Task OnInitializedAsync()
+    {
+        list = await PermissionService.GetListAsync();
+        UserInfo = AccountService.User.FullName;
+    }
+}

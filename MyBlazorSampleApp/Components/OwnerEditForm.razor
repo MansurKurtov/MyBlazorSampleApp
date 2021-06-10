@@ -1,0 +1,42 @@
+﻿@using Entity.Models.EntityModels.Adm;
+@using Entity.Repository;
+
+@inject IRepository<AdmOwner> ownerRepository;
+
+
+<EditForm Model="@OwnerModel" OnValidSubmit="@InsertOwner">
+    <div class="row">
+
+        <div class="col-7">
+
+            <InputText id="OwnerName" @bind-Value="@OwnerName" class="form-control" type="text" placeholder="Название" />
+
+        </div>
+        <div class="col-5">
+            <button class="btn btn-primary text-center w-100" type="submit">
+                Добавить
+            </button>
+        </div>
+    </div>
+</EditForm>
+@code{
+    [Parameter]
+    public string OwnerName { get; set; }
+    [Parameter]
+    public AdmOwner OwnerModel { get; set; }
+    [Parameter]
+    public EventCallback<AdmOwner> OnOwnerChanged { get; set; }
+
+
+    protected override void OnParametersSet()
+    {
+        if (OwnerModel == null)
+            OwnerModel = new AdmOwner();
+    }
+    private async Task InsertOwner()
+    {
+        OwnerModel.Name = OwnerName;
+        var addResult = OwnerModel.Id == 0? await ownerRepository.InsertAsync(OwnerModel):await ownerRepository.UpdateAsync(OwnerModel);
+        await OnOwnerChanged.InvokeAsync(OwnerModel);
+    }
+}

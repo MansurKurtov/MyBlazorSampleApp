@@ -1,0 +1,90 @@
+﻿@page "/login"
+@layout EmptyLayout
+@using AuthService.Models;
+@using MyBlazorSampleApp.Services.Abstraction;
+@using MyBlazorSampleApp.Helpers.Extensions;
+
+@inject NavigationManager NavigationManager
+@inject IAccountService AccountService;
+@inject IAlertService AlertService;
+
+<div class="auth-wrap d-flex w-100">
+    <div class="auth-left-side">
+        <div class="d-flex justify-content-center w-100 flex-column h-100">
+            <h2 class="login_header">
+                Welcome to ADM Administation page
+            </h2>
+
+            <div class="auth-wrap-form ml-auto mx-auto">
+                <div class="card">
+                    <h4 class="card-header">Login</h4>
+                    <div class="card-body">
+                        <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary />
+                            <div class="form-group">
+                                <label>Username</label>
+                                <InputText @bind-Value="model.Login" class="form-control" />
+                                <ValidationMessage For="@(() => model.Login)" />
+                            </div>
+                            <div class="form-group">
+                                <label>Password</label>
+                                <InputText @bind-Value="model.Password" type="password" class="form-control" />
+                                <ValidationMessage For="@(() => model.Password)" />
+                            </div>
+                            <button disabled="@loading" class="btn btn-primary">
+                                @if (loading)
+                                {
+                                    <span class="spinner-border spinner-border-sm mr-1"></span>
+                                }
+                                Login
+                            </button>
+                        </EditForm>
+                    </div>
+                </div>
+                <Alert />
+            </div>
+
+            <h5 class="login_footer">
+                (c) Avast team - 2021
+            </h5>
+        </div>
+    </div>
+
+    <div class="right-side-banner">
+        <img src="https://images.unsplash.com/photo-1557320100-5ce463a7f1d8?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=674&q=80" alt="">
+    </div>
+</div>
+
+
+@code {
+    private LoginModel model = new LoginModel();
+    private bool loading;
+
+    private async void OnValidSubmit()
+    {
+        AlertService.Clear();
+        loading = true;
+        try
+        {
+            var result = await AccountService.Login(model);
+            loading = false;
+            StateHasChanged();
+
+            if (result == default)
+            {
+                AlertService.Warn("Ошибка имени пользователя или пароля!");
+                return;
+            }
+
+
+            var returnUrl = NavigationManager.QueryString("returnUrl") ?? "";
+            NavigationManager.NavigateTo(returnUrl);
+        }
+        catch (Exception ex)
+        {
+            loading = false;
+            StateHasChanged();
+        }
+    }
+}

@@ -1,0 +1,13 @@
+﻿@using MyBlazorSampleApp.ForLearning.Helpers;
+@inject Person Person;
+
+<button @onclick="SetAge">Set Age</button>
+
+@code {
+    private int PersonAge = 10;
+    void SetAge()
+    {
+        PersonAge++;
+        Person.SetAge(PersonAge);
+    }
+}

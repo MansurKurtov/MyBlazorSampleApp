@@ -1,0 +1,51 @@
+﻿@using Entity.Models.EntityModels.Adm;
+@using Entity.Repository;
+
+@inject IRepository<Adm> admRepository;
+
+
+<EditForm Model="@AdmModel" OnValidSubmit="@EditAdmData">
+    <div class="row">
+        <div class="col-7">
+            <InputText id="OwnerName" @bind-Value="@AdmName" class="form-control" type="text" placeholder="Название" />
+
+        </div>
+        <div class="col-5">
+            <button class="btn btn-primary text-center w-100" type="submit">
+                Добавить
+            </button>
+        </div>
+    </div>
+</EditForm>
+@code{
+    [Parameter]
+    public string AdmName { get; set; }
+    [Parameter]
+    public Adm AdmModel { get; set; }
+    [Parameter]
+    public EventCallback<Adm> OnAdmChanged { get; set; }
+    [Parameter]
+    public AdmGroup Group { get; set; }
+    [Parameter]
+    public AdmOwner Owner { get; set; }
+
+
+    protected override void OnParametersSet()
+    {
+        if (AdmModel == null)
+            AdmModel = new Adm();
+    }
+    private async Task EditAdmData()
+    {
+        if (Group == null)
+            return;
+
+        AdmModel.Name = AdmName;
+        AdmModel.AdmGroupId = Group.Id;
+        AdmModel.AdmOwnerId = Owner.Id;
+        AdmModel.RegistrationDate = DateTime.Now;
+        
+        var addResult = AdmModel.Id == 0 ? await admRepository.InsertAsync(AdmModel) : await admRepository.UpdateAsync(AdmModel);
+        await OnAdmChanged.InvokeAsync(AdmModel);
+    }
+}

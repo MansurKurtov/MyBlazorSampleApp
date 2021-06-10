@@ -1,0 +1,185 @@
+﻿@using MyBlazorSampleApp.Components.Models;
+@using Entity.Models.EntityModels.Adm;
+@using Entity.Models.EntityModels.Auth;
+@using Entity.Repository;
+@using MyBlazorSampleApp.Helpers.Extensions.Models;
+@using MyBlazorSampleApp.Helpers;
+
+@inject IRepository<Adm> admRepository;
+@inject IRepository<AuthUser> authRepository;
+
+
+<p>Параметры поиска</p>
+<EditForm Model="@TSearchModel" OnValidSubmit="@Search">
+
+    <div class="row">
+        <div class="col-6">
+
+            <div class="tranzaction_search_block">
+
+                <div>
+                    <label>Реквизиты платежа</label>
+                    <InputText id="Login" @bind-Value="TSearchModel.PayDetail" class="form-control" />
+                </div>
+
+                <div>
+                    <label>Номер платежа</label>
+                    <InputText id="Login" @bind-Value="TSearchModel.PayNumber" class="form-control" />
+                </div>
+
+                <div>
+                    <label>Точки оплаты</label>
+                    <select @bind="TSearchModel.AdmId" class="form-control">
+                        @if (adms != null)
+                        {
+                            @foreach (var item in adms)
+                            {
+                                <option value="@item.Id">@item.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div>
+                    <label>Пользователь</label>
+                    <select @bind="TSearchModel.UserId" class="form-control">
+                        @if (users != null)
+                        {
+                            @foreach (var item in users)
+                            {
+                                <option value="@item.Id">@item.FullName</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+            </div>
+
+        </div>
+        <div class="col-6">
+
+            <div class="tranzaction_search_block">
+
+                <div>
+                    <label>Постващик</label>
+                    <select @bind="TSearchModel.ProviderId" class="form-control">
+                        @if (providers != null)
+                        {
+                            @foreach (var item in providers)
+                            {
+                                <option value="@item.Value">@item.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div>
+                    <label>Опрератор</label>
+                    <select @bind="TSearchModel.OperatorId" class="form-control">
+                        @if (operators != null)
+                        {
+                            @foreach (var item in operators)
+                            {
+                                <option value="@item.Value">@item.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div>
+                    <label>Статус оплаты</label>
+                    <select @bind="TSearchModel.PayStatusId" class="form-control">
+                        @if (payStatuses != null)
+                        {
+                            @foreach (var item in payStatuses)
+                            {
+                                <option value="@item.Value">@item.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div>
+                    <label>
+                        Дата
+                    </label>
+                    <div style="width: calc( 100% - 150px )">
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="d-flex align-items-center">
+                                    <span class="mr-2">C</span>
+                                    <InputDate class="form-control" @bind-Value="@TSearchModel.BeginDate"></InputDate>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="d-flex align-items-center">
+                                    <span class="mr-2">
+                                        По
+                                    </span>
+                                    <InputDate class="form-control" @bind-Value="@TSearchModel.EndDate"></InputDate>
+                                </div>
+                            </div>
+                        </div>
+
+
+                    </div>
+
+                </div>
+
+
+
+            </div>
+
+        </div>
+    </div>
+
+    <div class="text-right">
+        <button class="btn btn-primary" @onclick="()=>Search()">Показать результат</button>
+    </div>
+
+</EditForm>
+
+@code {
+
+    private TransactionsSearch TSearchModel = new TransactionsSearch();
+    [Parameter]
+    public EventCallback<TransactionsSearch> OnSearchByFilter { get; set; }
+
+
+    private List<EnumItem> providers = new List<EnumItem>();
+    private List<EnumItem> operators = new List<EnumItem>();
+    private List<Adm> adms = new List<Adm>();
+    private List<EnumItem> payStatuses = new List<EnumItem>();
+    private List<AuthUser> users = new List<AuthUser>();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        providers = EnumHelper.GetProviders();       
+        operators = new List<EnumItem>();
+        operators.Add(new EnumItem() { Value = 0, Name = "Все" });        
+
+        var admList = await admRepository.GetListAsync();
+        adms = new List<Adm>();
+        adms.Add(new Adm() { Id = 0, Name = "Все" });
+        adms.AddRange(admList);
+
+        var payStatusesList = EnumHelper.GetPaymentStatuses();
+        payStatuses = new List<EnumItem>();
+        payStatuses.Add(new EnumItem() { Value = 0, Name = "Все" });
+        payStatuses.AddRange(payStatusesList);
+
+        var usersList = await authRepository.GetListAsync();
+        users.Add(new AuthUser() { Id = 0, FullName = "Все" });
+        users.AddRange(usersList);
+
+        TSearchModel.BeginDate = DateTime.Today.AddDays(-1);
+        TSearchModel.EndDate = DateTime.Today;
+
+    }
+
+    private void Search()
+    {
+        OnSearchByFilter.InvokeAsync(TSearchModel);
+    }
+}
